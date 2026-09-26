@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Abby Learning Dashboard</title>
+<style>
+  :root{
+    /* Palette pulled directly from Discovery Lab's live homepage
+       (https://educadug.github.io/discovery-lab/, engine/style.css?v=12),
+       which renders with :root, [data-theme="earth"] - "Environmental Science -
+       soil, water, air". Confirmed against the fetched stylesheet, not invented. */
+    --paper:#F2EFE6; --surface:#FBF9F3; --surface-2:#EAE6D9;
+    --ink:#1D211C; --ink-2:#4A5148; --ink-3:#757C72;
+    --line:#1D211C24; --line-strong:#1D211C40;
+    --accent:#40634C; --accent-hi:#517B5E; --accent-ink:#FBF9F3;
+    --accent-wash:#40634C14;
+    --signal:#B5551F; --signal-wash:#B5551F14;
+    --positive:#2F6B45; --caution:#A66B00;
+    --radius:14px; --radius-lg:22px;
+    --font-display:"Fraunces","Iowan Old Style",Georgia,serif;
+    --font-ui:"Public Sans",ui-sans-serif,system-ui,"Segoe UI",sans-serif;
+    --font-data:"JetBrains Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--font-ui);background-color:var(--paper);color:var(--ink);line-height:1.55;
+    /* Faint field-notebook grid, same recipe as the Discovery Lab homepage body rule. */
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:48px 48px,48px 48px;
+    background-position:-1px -1px;
+  }
+  a{color:var(--signal);}
+  .eyebrow-label{font-family:var(--font-data);font-size:0.72rem;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--signal);display:inline-flex;align-items:center;gap:6px;}
+  .target-icon{display:inline-block;width:14px;height:14px;vertical-align:middle;color:var(--signal);}
+  .shell{max-width:920px;margin:0 auto;padding:0 20px;}
+  header.site{background:var(--surface);border-bottom:1px dashed var(--line-strong);padding:22px 0;}
+  header.site h1{font-family:var(--font-display);font-size:1.9rem;margin:0 0 4px;
+    font-variation-settings:"wght" 600;}
+  header.site p{margin:0;color:var(--ink-2);font-size:0.95rem;}
+  nav.tabs{display:flex;gap:8px;flex-wrap:wrap;background:var(--surface);border-bottom:1px dashed var(--line-strong);
+    padding:10px 0;position:sticky;top:0;z-index:5;}
+  nav.tabs .shell{display:flex;gap:8px;flex-wrap:wrap;}
+  .tab-btn{border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);
+    padding:9px 14px;border-radius:999px;font:inherit;font-family:var(--font-data);
+    text-transform:uppercase;letter-spacing:.04em;font-weight:700;font-size:0.78rem;cursor:pointer;}
+  .tab-btn.active{background:var(--signal);color:var(--accent-ink);border-color:var(--signal);}
+  main{padding:26px 0 60px;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+  h2.panel-title{font-family:var(--font-display);font-size:1.5rem;margin:0 0 6px;}
+  .panel-sub{color:var(--ink-2);margin:0 0 20px;font-size:0.95rem;max-width:64ch;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);
+    padding:18px 20px;margin-bottom:16px;}
+  .card + .card{border-top:1px dashed var(--line-strong);}
+  .card h3{margin:0 0 8px;font-size:1.05rem;font-family:var(--font-display);}
+  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;}
+  .stat{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:var(--radius);padding:14px 16px;}
+  .stat .num{font-family:var(--font-data);font-size:1.6rem;font-weight:700;color:var(--accent);}
+  .stat .label{font-size:0.8rem;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em;}
+  .focus-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;}
+  .focus-card{border-radius:var(--radius);padding:16px;border:1px solid var(--line);}
+  .focus-card.win{border-left:4px solid var(--positive);background:#2F6B4508;}
+  .focus-card.tonight{border-left:4px solid var(--signal);background:var(--signal-wash);}
+  .focus-card.edge{border-left:4px solid var(--caution);background:#A66B0010;}
+  .focus-card .eyebrow{font-family:var(--font-data);font-size:.72rem;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--ink-2);margin-bottom:6px;}
+  .quote-card{border-left:3px solid var(--accent);padding:12px 16px;margin-bottom:10px;background:var(--surface);
+    border-radius:var(--radius);}
+  .quote-card blockquote{margin:0 0 6px;font-family:var(--font-display);font-size:1.05rem;font-style:italic;color:var(--ink);}
+  .quote-card .interp{font-size:0.85rem;color:var(--ink-2);}
+  .pill{display:inline-block;font-family:var(--font-data);font-size:0.72rem;text-transform:uppercase;
+    letter-spacing:.06em;padding:3px 10px;border-radius:999px;border:1px solid var(--line-strong);color:var(--ink-2);
+    background:var(--surface-2);margin-right:6px;}
+  .pill.stage-Emerging{color:#A66B00;border-color:#A66B0055;background:#A66B0014;}
+  .pill.stage-Developing{color:#B5551F;border-color:#B5551F55;background:#B5551F14;}
+  .pill.stage-Growing{color:#517B5E;border-color:#517B5E55;background:#517B5E14;}
+  .pill.stage-Secure{color:#2F6B45;border-color:#2F6B4555;background:#2F6B4514;}
+  .chart-card svg{width:100%;height:auto;display:block;}
+  .chart-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:0.82rem;color:var(--ink-2);}
+  .legend-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle;}
+  .evidence-pop{display:none;margin-top:10px;padding:10px 12px;border-radius:var(--radius);
+    background:var(--surface-2);font-size:0.86rem;color:var(--ink-2);}
+  .evidence-pop.show{display:block;}
+  .milestone{display:flex;gap:12px;margin-bottom:14px;}
+  .milestone .dot{width:10px;height:10px;border-radius:50%;background:var(--signal);flex:0 0 auto;margin-top:6px;}
+  .milestone .date{font-family:var(--font-data);font-size:0.78rem;color:var(--ink-3);}
+  .profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .profile-grid .item{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;}
+  .profile-grid .item .k{font-family:var(--font-data);font-size:0.72rem;text-transform:uppercase;color:var(--ink-2);
+    margin-bottom:4px;}
+  .basis-note{font-size:0.8rem;color:var(--ink-3);margin-top:6px;}
+  ul.plain{margin:0;padding-left:18px;}
+  ul.plain li{margin-bottom:6px;}
+  details.session{border:1px solid var(--line);border-radius:var(--radius);margin-bottom:10px;background:var(--surface);}
+  details.session summary{padding:12px 16px;cursor:pointer;font-weight:700;list-style:none;font-family:var(--font-display);}
+  details.session summary::-webkit-details-marker{display:none;}
+  details.session summary .sdate{font-family:var(--font-data);font-size:0.78rem;color:var(--ink-2);
+    font-weight:400;display:block;text-transform:uppercase;letter-spacing:.04em;}
+  details.session .session-body{padding:0 16px 16px;border-top:1px dashed var(--line-strong);}
+  details.session .session-body h4{font-size:0.85rem;margin:14px 0 6px;color:var(--ink-2);text-transform:uppercase;
+    letter-spacing:.03em;}
+  .resource-link{display:block;margin-bottom:8px;}
+  .resource-link a{font-weight:700;word-break:break-word;}
+  .resource-link .note{font-size:0.85rem;color:var(--ink-2);}
+  .about-portrait-row{display:flex;gap:18px;align-items:center;margin-bottom:16px;flex-wrap:wrap;}
+  .btn-linkedin{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:var(--accent-ink);
+    padding:10px 16px;border-radius:999px;text-decoration:none;font-weight:700;font-size:0.9rem;}
+  .about-hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;margin-bottom:22px;}
+  .about-photo-wrap{position:relative;width:168px;height:168px;margin:6px 0 8px;display:flex;align-items:center;justify-content:center;}
+  .about-photo-wrap::before{content:"";position:absolute;inset:-22px;border-radius:50%;
+    background:radial-gradient(circle,#40634C55 0%,#40634C22 40%,transparent 72%);}
+  .about-photo-wrap::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--accent-hi);opacity:.65;}
+  .about-photo{position:relative;width:168px;height:168px;border-radius:50%;object-fit:cover;
+    border:3px solid var(--surface);box-shadow:0 0 0 1px var(--line-strong);z-index:1;}
+  .about-heading{font-family:var(--font-display);font-size:1.9rem;margin:2px 0 0;font-variation-settings:"wght" 600;}
+  .about-subheading{color:var(--ink-2);max-width:52ch;margin:0;font-size:0.98rem;}
+  .about-chip-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:6px 0 4px;}
+  .about-chip{font-family:var(--font-data);font-size:0.72rem;text-transform:uppercase;letter-spacing:.05em;
+    padding:5px 12px;border-radius:999px;border:1px solid var(--line-strong);color:var(--ink-2);background:var(--surface-2);}
+  .about-closing h3{margin:0 0 6px;font-family:var(--font-display);font-size:1.1rem;}
+  footer.disclaimer{border-top:1px solid var(--line);margin-top:24px;padding-top:16px;font-size:0.8rem;color:var(--ink-3);}
+  @media (max-width:640px){
+    .stat-row,.focus-row,.profile-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="shell">
+    <h1>Abby's Learning Dashboard</h1>
+    <p>A voluntary, supplementary learning resource from Mr. Guevara. Please refer to Canvas / the Learning Lab for grades, deadlines and official progress reports.</p>
+  </div>
+</header>
+<nav class="tabs">
+  <div class="shell">
+    <button class="tab-btn active" data-tab="overview">Overview</button>
+    <button class="tab-btn" data-tab="progress">Progress</button>
+    <button class="tab-btn" data-tab="helpathome">Help at Home</button>
+    <button class="tab-btn" data-tab="sessions">Sessions</button>
+    <button class="tab-btn" data-tab="about">About</button>
+  </div>
+</nav>
+<main class="shell">
+
+  <section class="panel active" id="tab-overview"></section>
+  <section class="panel" id="tab-progress"></section>
+  <section class="panel" id="tab-helpathome"></section>
+  <section class="panel" id="tab-sessions"></section>
+  <section class="panel" id="tab-about"></section>
+
+</main>
+
+<script id="dashboard-v2-data" type="application/json">{
+  "student_first_name": "Abby",
+  "programme": "US Marine Science (25hrs) (DV)",
+  "canvas_note": "Please refer to Canvas for quantitative information such as grades, deadlines, submitted work, and formal assessment data.",
+  "dashboard_purpose_note": "This dashboard is a voluntary teaching resource created by Mr. Guevara to show the student's longer-term learning journey, recurring patterns, and next steps across lessons.",
+  "professional_observation_note": "The learning notes in this dashboard are Mr. Guevara's professional observations based on lessons. They are not fixed labels, diagnoses, grades, or formal assessment results.",
+  "stats": {
+    "sessions_logged": 4,
+    "distinct_skills_tried": 30,
+    "milestones_hit": 3
+  },
+  "skill_threads": {
+    "US Marine Science Content Knowledge": [
+      {
+        "session_date_iso": "2026-08-03",
+        "session_date": "3 August 2026",
+        "lesson_title": "Welcome Orientation Setup",
+        "stage": "Developing",
+        "evidence": "Abby moved from being new to the CGA systems to having a clearer understanding of where lessons, materials, and schedule changes are managed."
+      },
+      {
+        "session_date_iso": "2026-08-10",
+        "session_date": "10 August 2026",
+        "lesson_title": "Ocean Salinity Living Seawater",
+        "stage": "Developing",
+        "evidence": "Abby completed her first quiz successfully and remembered the 3.5% ocean salinity figure clearly."
+      },
+      {
+        "session_date_iso": "2026-09-07",
+        "session_date": "07 September 2026",
+        "lesson_title": "Climate Change Ocean Acidification",
+        "stage": "Growing",
+        "evidence": "Abby identified two of the three causes of coral bleaching independently before I introduced ocean acidification as the third."
+      },
+      {
+        "session_date_iso": "2026-09-10",
+        "session_date": "10 September 2026",
+        "lesson_title": "Ocean Pollution Renewable Energy",
+        "stage": "Developing",
+        "evidence": "Abby worked out independently that road runoff from an entire city is a non-point source pollution example, once redirected to think about cities rather than farms."
+      }
+    ],
+    "US Marine Science Independent Reasoning": [
+      {
+        "session_date_iso": "2026-08-03",
+        "session_date": "3 August 2026",
+        "lesson_title": "Welcome Orientation Setup",
+        "stage": "Developing",
+        "evidence": "The strongest outcome of the session was Abby leaving with more clarity about how the online course will work and where to go when something is unclear."
+      },
+      {
+        "session_date_iso": "2026-08-10",
+        "session_date": "10 August 2026",
+        "lesson_title": "Ocean Salinity Living Seawater",
+        "stage": "Developing",
+        "evidence": "Abby engaged best when Marine Science ideas were connected to her own experiences of beaches, diving, and curiosity about ocean life."
+      },
+      {
+        "session_date_iso": "2026-09-07",
+        "session_date": "07 September 2026",
+        "lesson_title": "Climate Change Ocean Acidification",
+        "stage": "Growing",
+        "evidence": "Abby moved from needing guidance to isolate simulation variables to independently testing one variable at a time and predicting outcomes correctly, within a single lesson."
+      },
+      {
+        "session_date_iso": "2026-09-10",
+        "session_date": "10 September 2026",
+        "lesson_title": "Ocean Pollution Renewable Energy",
+        "stage": "Developing",
+        "evidence": "Abby can reason her way to a genuinely new example once redirected away from an on-screen anchor, rather than only recognising examples she is shown."
+      }
+    ]
+  },
+  "milestones": [
+    {
+      "session_date": "3 August 2026",
+      "session_date_iso": "2026-08-03",
+      "title": "Welcome Orientation Setup",
+      "detail": "Abby moved from being new to the CGA systems to having a clearer understanding of where lessons, materials, and schedule changes are managed."
+    },
+    {
+      "session_date": "07 September 2026",
+      "session_date_iso": "2026-09-07",
+      "title": "Climate Change Ocean Acidification",
+      "detail": "Abby identified two of the three causes of coral bleaching independently before I introduced ocean acidification as the third."
+    },
+    {
+      "session_date": "10 September 2026",
+      "session_date_iso": "2026-09-10",
+      "title": "Ocean Pollution Renewable Energy",
+      "detail": "Abby worked out independently that road runoff from an entire city is a non-point source pollution example, once redirected to think about cities rather than farms."
+    }
+  ],
+  "learning_profile": {
+    "based_on_sessions": 4,
+    "engages_best_when": "give a specific redirection (a different setting or context) rather than a general prompt to keep thinking when a brainstorm task stalls",
+    "responds_well_to": "anchor new chemistry or classification content to something she already knows, such as the pH scale or Greek word roots",
+    "often_curious_about": "Abby explained, unprompted, that renewable energy is better because it is effectively unlimited while non-renewable sources run out once used.",
+    "currently_trying": "Generating an original example rather than anchoring to whatever is already on screen"
+  },
+  "voice_quotes": [
+    {
+      "quote": "Abby explained, unprompted, that renewable energy is better because it is effectively unlimited while non-renewable sources run out once used.",
+      "session_date": "10 September 2026",
+      "lesson_title": "Ocean Pollution Renewable Energy"
+    },
+    {
+      "quote": "Abby engaged well with the climate simulation, and by the end of the lesson she explained ocean acidification back clearly in her own words.",
+      "session_date": "07 September 2026",
+      "lesson_title": "Climate Change Ocean Acidification"
+    },
+    {
+      "quote": "Abby was especially interested in undiscovered ocean species and drew on her own beach and diving experiences.",
+      "session_date": "10 August 2026",
+      "lesson_title": "Ocean Salinity Living Seawater"
+    }
+  ],
+  "sessions": [
+    {
+      "session_date": "10 September 2026",
+      "session_date_iso": "2026-09-10",
+      "lesson_title": "Ocean Pollution Renewable Energy",
+      "summary": "Abby recapped climate change and ocean acidification confidently, learned to distinguish point source from non-point source ocean pollution, brainstormed ocean-related careers, compared renewable and non-renewable energy including two types of renewable ocean energy, and was introduced to phytoplankton and zooplankton before scoring 10 out of 15 on a quiz.",
+      "aim": "To help Abby understand where ocean pollution actually comes from, appreciate how much of the global economy depends on the ocean, and build her first understanding of ocean-based renewable energy and the plankton that anchor marine ecosystems.",
+      "headline_insight": "Abby can reason her way to a genuinely new example once redirected away from an on-screen anchor, rather than only recognising examples she is shown.",
+      "current_focus": "Ocean pollution sources, renewable ocean energy, and phytoplankton versus zooplankton",
+      "big_win": "Abby worked out independently that road runoff from an entire city is a non-point source pollution example, once redirected to think about cities rather than farms.",
+      "next_priority": "Have Abby review the phytoplankton quiz questions she missed and explain the correct answers in her own words.",
+      "engagement_status": "Confident and independent recapping prior content and brainstorming careers, needed real scaffolding to move past an on-screen example during the pollution task.",
+      "why_this_matters": "Distinguishing pollution sources and understanding renewable energy trade-offs are foundational Marine Science skills Abby will keep building on as the course continues.",
+      "progress_since_last_update": "Abby has moved from ocean acidification chemistry into applying that foundation to pollution sources, careers, and renewable energy, showing the earlier content has genuinely settled in.",
+      "home_support": [
+        "Ask Abby for one new example each of point source and non-point source pollution, different from the ones used in class.",
+        "Ask her to explain the difference between phytoplankton and zooplankton in her own words."
+      ],
+      "student_voice": "Abby explained, unprompted, that renewable energy is better because it is effectively unlimited while non-renewable sources run out once used.",
+      "upcoming_focus": [
+        "securing the point versus non-point source pollution distinction with a fully original example",
+        "reviewing missed phytoplankton quiz questions",
+        "continuing to build comfort with the five kingdoms of life, especially protists"
+      ],
+      "strengths": [
+        "Recalls and confidently explains prior-lesson chemistry unprompted",
+        "Brainstorms real, specific, relevant examples independently once given room to think",
+        "Reasons through a new distinction once redirected with a specific prompt"
+      ],
+      "areas_for_growth": [
+        "Generating an original example rather than anchoring to whatever is already on screen",
+        "Securing the phytoplankton-versus-zooplankton and protist classification content",
+        "Building a more accurate sense of scale for large population figures"
+      ],
+      "next_steps": [
+        "Explain the correct answers to missed phytoplankton quiz questions",
+        "Generate a brand new point and non-point source pollution example unprompted",
+        "Explain why phytoplankton are classified as protists rather than plants"
+      ],
+      "skills_observed": [
+        "recalling and connecting prior-lesson content to new material",
+        "generating original examples of a taxonomy rather than only recognising given ones",
+        "reasoning about a large population estimate against a known reference point",
+        "brainstorming real-world career connections to a scientific topic",
+        "extracting key takeaways from a video before an assessed quiz"
+      ],
+      "engagement": "Most engaged during the careers brainstorm and the prior-lesson recap, needed the most support during the non-point source pollution task.",
+      "misconceptions_noticed": "Abby overestimated the world's population at around ten billion rather than approximately eight billion, and did not yet know that most phytoplankton are classified as protists rather than plants.",
+      "confidence_level": "Growing",
+      "successful_teaching_strategies": [
+        "give a specific redirection (a different setting or context) rather than a general prompt to keep thinking when a brainstorm task stalls",
+        "anchor new chemistry or classification content to something she already knows, such as the pH scale or Greek word roots"
+      ],
+      "adaptation_to_reach_full_potential": "Abby sometimes anchors to whatever example is already visible on the screen during a brainstorming task rather than generating something new, and responds well to a specific redirection, such as being asked to think about a different setting, rather than a repeated general prompt to keep thinking. I will keep building in that kind of specific redirection when a brainstorm task stalls.",
+      "extension_task": "Research one real example of how New South Wales or Australia regulates either point source or non-point source ocean pollution differently, and note one specific rule or programme used to control it.",
+      "family_friendly_science_explanation": "Abby learned that ocean pollution comes in two forms, point source pollution traceable to one exact place, and non-point source pollution coming from many places at once, like rain washing oil and rubbish off city roads into rivers and eventually the sea. She also learned that phytoplankton, tiny plant-like organisms living near the ocean surface, produce roughly half of the planet's oxygen through photosynthesis, even though they are technically classified as protists rather than true plants. She explored two types of renewable ocean energy, current turbines and wave energy devices, and learned that even renewable energy projects need careful study first, since they can change how sand moves along a nearby beach.",
+      "resources": [
+        {
+          "title": "Ocean Conservancy - Trash Free Seas",
+          "url": "https://oceanconservancy.org/trash-free-seas/",
+          "note": "Nonprofit resource on where ocean pollution comes from, extending today's point and non-point source discussion."
+        },
+        {
+          "title": "NASA Earth Observatory - Phytoplankton",
+          "url": "https://earthobservatory.nasa.gov/features/Phytoplankton",
+          "note": "Reinforces today's video on what phytoplankton are and why they matter for the planet's oxygen supply."
+        },
+        {
+          "title": "U.S. Energy Information Administration - Tidal Power",
+          "url": "https://www.eia.gov/energyexplained/hydropower/tidal-power.php",
+          "note": "Reliable government overview of tidal and ocean current energy, useful for revisiting today's renewable ocean energy examples."
+        }
+      ],
+      "dashboard_subject": "Marine Science",
+      "independence_patterns": [],
+      "misconceptions": [],
+      "communication_patterns": [],
+      "student_glows": [],
+      "accuracy_patterns": [],
+      "vocabulary_patterns": [],
+      "confidence_patterns": [],
+      "reasoning_patterns": [],
+      "successful_strategies": [],
+      "skills_focus": [],
+      "participation_patterns": [],
+      "student_grows": [],
+      "additional_notes": "",
+      "current_unit": "",
+      "student_pacing": "",
+      "lesson_engagement": "",
+      "assignments_outstanding": [],
+      "indicators": {},
+      "skills": [
+        {
+          "evidence": "Recalls and confidently explains prior-lesson chemistry unprompted",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "Brainstorms real, specific, relevant examples independently once given room to think",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "Reasons through a new distinction once redirected with a specific prompt",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "recalling and connecting prior-lesson content to new material",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "generating original examples of a taxonomy rather than only recognising given ones",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "reasoning about a large population estimate against a known reference point",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "brainstorming real-world career connections to a scientific topic",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "extracting key takeaways from a video before an assessed quiz",
+          "source_field": "skills_observed"
+        }
+      ],
+      "growing_next": [
+        {
+          "evidence": "Generating an original example rather than anchoring to whatever is already on screen",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Securing the phytoplankton-versus-zooplankton and protist classification content",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Building a more accurate sense of scale for large population figures",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Have Abby review the phytoplankton quiz questions she missed and explain the correct answers in her own words.",
+          "source_field": "next_priority"
+        }
+      ],
+      "raw_session": {
+        "session_date": "10 September 2026",
+        "session_date_iso": "2026-09-10",
+        "lesson_title": "Ocean Pollution Renewable Energy",
+        "summary": "Abby recapped climate change and ocean acidification confidently, learned to distinguish point source from non-point source ocean pollution, brainstormed ocean-related careers, compared renewable and non-renewable energy including two types of renewable ocean energy, and was introduced to phytoplankton and zooplankton before scoring 10 out of 15 on a quiz.",
+        "aim": "To help Abby understand where ocean pollution actually comes from, appreciate how much of the global economy depends on the ocean, and build her first understanding of ocean-based renewable energy and the plankton that anchor marine ecosystems.",
+        "headline_insight": "Abby can reason her way to a genuinely new example once redirected away from an on-screen anchor, rather than only recognising examples she is shown.",
+        "current_focus": "Ocean pollution sources, renewable ocean energy, and phytoplankton versus zooplankton",
+        "big_win": "Abby worked out independently that road runoff from an entire city is a non-point source pollution example, once redirected to think about cities rather than farms.",
+        "next_priority": "Have Abby review the phytoplankton quiz questions she missed and explain the correct answers in her own words.",
+        "engagement_status": "Confident and independent recapping prior content and brainstorming careers, needed real scaffolding to move past an on-screen example during the pollution task.",
+        "why_this_matters": "Distinguishing pollution sources and understanding renewable energy trade-offs are foundational Marine Science skills Abby will keep building on as the course continues.",
+        "progress_since_last_update": "Abby has moved from ocean acidification chemistry into applying that foundation to pollution sources, careers, and renewable energy, showing the earlier content has genuinely settled in.",
+        "home_support": [
+          "Ask Abby for one new example each of point source and non-point source pollution, different from the ones used in class.",
+          "Ask her to explain the difference between phytoplankton and zooplankton in her own words."
+        ],
+        "student_voice": "Abby explained, unprompted, that renewable energy is better because it is effectively unlimited while non-renewable sources run out once used.",
+        "upcoming_focus": [
+          "securing the point versus non-point source pollution distinction with a fully original example",
+          "reviewing missed phytoplankton quiz questions",
+          "continuing to build comfort with the five kingdoms of life, especially protists"
+        ],
+        "strengths": [
+          "Recalls and confidently explains prior-lesson chemistry unprompted",
+          "Brainstorms real, specific, relevant examples independently once given room to think",
+          "Reasons through a new distinction once redirected with a specific prompt"
+        ],
+        "areas_for_growth": [
+          "Generating an original example rather than anchoring to whatever is already on screen",
+          "Securing the phytoplankton-versus-zooplankton and protist classification content",
+          "Building a more accurate sense of scale for large population figures"
+        ],
+        "next_steps": [
+          "Explain the correct answers to missed phytoplankton quiz questions",
+          "Generate a brand new point and non-point source pollution example unprompted",
+          "Explain why phytoplankton are classified as protists rather than plants"
+        ],
+        "skills_observed": [
+          "recalling and connecting prior-lesson content to new material",
+          "generating original examples of a taxonomy rather than only recognising given ones",
+          "reasoning about a large population estimate against a known reference point",
+          "brainstorming real-world career connections to a scientific topic",
+          "extracting key takeaways from a video before an assessed quiz"
+        ],
+        "engagement": "Most engaged during the careers brainstorm and the prior-lesson recap, needed the most support during the non-point source pollution task.",
+        "misconceptions_noticed": "Abby overestimated the world's population at around ten billion rather than approximately eight billion, and did not yet know that most phytoplankton are classified as protists rather than plants.",
+        "confidence_level": "Growing",
+        "successful_teaching_strategies": [
+          "give a specific redirection (a different setting or context) rather than a general prompt to keep thinking when a brainstorm task stalls",
+          "anchor new chemistry or classification content to something she already knows, such as the pH scale or Greek word roots"
+        ],
+        "adaptation_to_reach_full_potential": "Abby sometimes anchors to whatever example is already visible on the screen during a brainstorming task rather than generating something new, and responds well to a specific redirection, such as being asked to think about a different setting, rather than a repeated general prompt to keep thinking. I will keep building in that kind of specific redirection when a brainstorm task stalls.",
+        "extension_task": "Research one real example of how New South Wales or Australia regulates either point source or non-point source ocean pollution differently, and note one specific rule or programme used to control it.",
+        "family_friendly_science_explanation": "Abby learned that ocean pollution comes in two forms, point source pollution traceable to one exact place, and non-point source pollution coming from many places at once, like rain washing oil and rubbish off city roads into rivers and eventually the sea. She also learned that phytoplankton, tiny plant-like organisms living near the ocean surface, produce roughly half of the planet's oxygen through photosynthesis, even though they are technically classified as protists rather than true plants. She explored two types of renewable ocean energy, current turbines and wave energy devices, and learned that even renewable energy projects need careful study first, since they can change how sand moves along a nearby beach.",
+        "resources": [
+          {
+            "title": "Ocean Conservancy - Trash Free Seas",
+            "url": "https://oceanconservancy.org/trash-free-seas/",
+            "note": "Nonprofit resource on where ocean pollution comes from, extending today's point and non-point source discussion."
+          },
+          {
+            "title": "NASA Earth Observatory - Phytoplankton",
+            "url": "https://earthobservatory.nasa.gov/features/Phytoplankton",
+            "note": "Reinforces today's video on what phytoplankton are and why they matter for the planet's oxygen supply."
+          },
+          {
+            "title": "U.S. Energy Information Administration - Tidal Power",
+            "url": "https://www.eia.gov/energyexplained/hydropower/tidal-power.php",
+            "note": "Reliable government overview of tidal and ocean current energy, useful for revisiting today's renewable ocean energy examples."
+          }
+        ],
+        "dashboard_subject": "Marine Science",
+        "independence_patterns": [],
+        "misconceptions": [],
+        "communication_patterns": [],
+        "student_glows": [],
+        "accuracy_patterns": [],
+        "vocabulary_patterns": [],
+        "confidence_patterns": [],
+        "reasoning_patterns": [],
+        "successful_strategies": [],
+        "skills_focus": [],
+        "participation_patterns": [],
+        "student_grows": [],
+        "additional_notes": "",
+        "current_unit": "",
+        "student_pacing": "",
+        "lesson_engagement": "",
+        "assignments_outstanding": [],
+        "indicators": {}
+      }
+    },
+    {
+      "session_date": "07 September 2026",
+      "session_date_iso": "2026-09-07",
+      "lesson_title": "Climate Change Ocean Acidification",
+      "summary": "Abby connected greenhouse gases, ocean acidification chemistry, and sea level rise, and explained ocean acidification back clearly by the end of the lesson.",
+      "aim": "To help Abby understand ocean acidification as a direct chemical consequence of rising atmospheric carbon dioxide, and to connect this and sea level rise to the wider picture of human-driven climate change.",
+      "headline_insight": "Abby moved from needing guidance to isolate simulation variables to independently testing one variable at a time and predicting outcomes correctly, within a single lesson.",
+      "current_focus": "ocean acidification chemistry, greenhouse gases, and the two separate causes of sea level rise",
+      "big_win": "Abby identified two of the three causes of coral bleaching independently before I introduced ocean acidification as the third.",
+      "next_priority": "Secure the 3.5% salinity figure and the ocean acidification chemistry as stable anchor facts before moving into pollution monitoring methods.",
+      "engagement_status": "Relaxed and increasingly confident, especially once ideas were connected to vivid real-world comparisons.",
+      "why_this_matters": "This lesson gave Abby a genuine chemical explanation for a change she already knew was happening in the ocean, moving her from description to mechanism.",
+      "progress_since_last_update": "Abby has moved from onboarding and first content lessons into confidently reasoning through a multi-step scientific process.",
+      "home_support": [
+        "Ask Abby what causes ocean acidification and what it produces.",
+        "Ask her the two separate reasons sea level is rising."
+      ],
+      "student_voice": "Abby engaged well with the climate simulation, and by the end of the lesson she explained ocean acidification back clearly in her own words.",
+      "upcoming_focus": [
+        "pollution monitoring methods",
+        "how scientists measure water, soil, and air pollution"
+      ],
+      "strengths": [
+        "Strong independent reasoning from visual evidence",
+        "Growing precision when testing variables in a simulation",
+        "Good recall of prior learning, once corrected"
+      ],
+      "areas_for_growth": [
+        "Secure the 3.5% salinity figure firmly",
+        "Build vocabulary for describing chemical reactions",
+        "Continue connecting causes to effects across multiple steps"
+      ],
+      "next_steps": [
+        "Write a two-sentence explanation of ocean acidification",
+        "Describe one technological and one nature-based carbon removal method",
+        "Explain the two separate causes of sea level rise in writing"
+      ],
+      "skills_observed": [
+        "cause-and-effect reasoning",
+        "visual evidence interpretation",
+        "variable isolation in a simulation",
+        "connecting new content to prior learning"
+      ],
+      "engagement": "Most engaged when concepts were introduced through a vivid comparison before moving into the underlying chemistry.",
+      "misconceptions_noticed": "Abby recalled average ocean salinity as 1.5% rather than 3.5%, and was not previously aware of the stomach's unusually low pH or of thermal expansion as a cause of sea level rise.",
+      "confidence_level": "Growing steadily, increasingly confident explaining ideas in her own words",
+      "successful_teaching_strategies": [
+        "vivid real-world analogies before introducing chemistry",
+        "guided one-variable-at-a-time simulation exploration",
+        "connecting new content to previously learned concepts such as pH"
+      ],
+      "adaptation_to_reach_full_potential": "Abby continues to respond best when a scientific concept is introduced through a memorable comparison before moving into the underlying chemistry, and when simulation exploration is narrowed to one variable at a time once she has had a chance to explore freely.",
+      "extension_task": "Choose one coastal city other than Sydney and research how sea level rise is expected to affect it.",
+      "family_friendly_science_explanation": "The ocean is absorbing extra carbon dioxide from the air, which reacts with seawater to form a weak acid and slowly lowers the ocean's pH, separately from the warming water that is also harming coral reefs.",
+      "resources": [
+        {
+          "title": "NOAA National Ocean Service - What is Ocean Acidification?",
+          "url": "https://oceanservice.noaa.gov/facts/acidification.html",
+          "note": "Useful for revisiting the chemistry behind ocean acidification."
+        },
+        {
+          "title": "NOAA National Ocean Service - What is Coral Bleaching?",
+          "url": "https://oceanservice.noaa.gov/facts/coral_bleach.html",
+          "note": "Useful for connecting the lesson's coral bleaching image to the underlying science."
+        },
+        {
+          "title": "NASA Science - Is Sea Level Rising?",
+          "url": "https://science.nasa.gov/kids/earth/is-sea-level-rising/",
+          "note": "Useful for reinforcing the two separate causes of sea level rise."
+        }
+      ],
+      "dashboard_subject": "Marine Science",
+      "independence_patterns": [],
+      "misconceptions": [],
+      "communication_patterns": [],
+      "student_glows": [],
+      "accuracy_patterns": [],
+      "vocabulary_patterns": [],
+      "confidence_patterns": [],
+      "reasoning_patterns": [],
+      "successful_strategies": [],
+      "skills_focus": [],
+      "participation_patterns": [],
+      "student_grows": [],
+      "additional_notes": "",
+      "current_unit": "",
+      "student_pacing": "",
+      "lesson_engagement": "",
+      "assignments_outstanding": [],
+      "indicators": {},
+      "skills": [
+        {
+          "evidence": "Strong independent reasoning from visual evidence",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "Growing precision when testing variables in a simulation",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "Good recall of prior learning, once corrected",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "cause-and-effect reasoning",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "visual evidence interpretation",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "variable isolation in a simulation",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "connecting new content to prior learning",
+          "source_field": "skills_observed"
+        }
+      ],
+      "growing_next": [
+        {
+          "evidence": "Secure the 3.5% salinity figure firmly",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Build vocabulary for describing chemical reactions",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Continue connecting causes to effects across multiple steps",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Secure the 3.5% salinity figure and the ocean acidification chemistry as stable anchor facts before moving into pollution monitoring methods.",
+          "source_field": "next_priority"
+        }
+      ],
+      "raw_session": {
+        "session_date": "07 September 2026",
+        "session_date_iso": "2026-09-07",
+        "lesson_title": "Climate Change Ocean Acidification",
+        "summary": "Abby connected greenhouse gases, ocean acidification chemistry, and sea level rise, and explained ocean acidification back clearly by the end of the lesson.",
+        "aim": "To help Abby understand ocean acidification as a direct chemical consequence of rising atmospheric carbon dioxide, and to connect this and sea level rise to the wider picture of human-driven climate change.",
+        "headline_insight": "Abby moved from needing guidance to isolate simulation variables to independently testing one variable at a time and predicting outcomes correctly, within a single lesson.",
+        "current_focus": "ocean acidification chemistry, greenhouse gases, and the two separate causes of sea level rise",
+        "big_win": "Abby identified two of the three causes of coral bleaching independently before I introduced ocean acidification as the third.",
+        "next_priority": "Secure the 3.5% salinity figure and the ocean acidification chemistry as stable anchor facts before moving into pollution monitoring methods.",
+        "engagement_status": "Relaxed and increasingly confident, especially once ideas were connected to vivid real-world comparisons.",
+        "why_this_matters": "This lesson gave Abby a genuine chemical explanation for a change she already knew was happening in the ocean, moving her from description to mechanism.",
+        "progress_since_last_update": "Abby has moved from onboarding and first content lessons into confidently reasoning through a multi-step scientific process.",
+        "home_support": [
+          "Ask Abby what causes ocean acidification and what it produces.",
+          "Ask her the two separate reasons sea level is rising."
+        ],
+        "student_voice": "Abby engaged well with the climate simulation, and by the end of the lesson she explained ocean acidification back clearly in her own words.",
+        "upcoming_focus": [
+          "pollution monitoring methods",
+          "how scientists measure water, soil, and air pollution"
+        ],
+        "strengths": [
+          "Strong independent reasoning from visual evidence",
+          "Growing precision when testing variables in a simulation",
+          "Good recall of prior learning, once corrected"
+        ],
+        "areas_for_growth": [
+          "Secure the 3.5% salinity figure firmly",
+          "Build vocabulary for describing chemical reactions",
+          "Continue connecting causes to effects across multiple steps"
+        ],
+        "next_steps": [
+          "Write a two-sentence explanation of ocean acidification",
+          "Describe one technological and one nature-based carbon removal method",
+          "Explain the two separate causes of sea level rise in writing"
+        ],
+        "skills_observed": [
+          "cause-and-effect reasoning",
+          "visual evidence interpretation",
+          "variable isolation in a simulation",
+          "connecting new content to prior learning"
+        ],
+        "engagement": "Most engaged when concepts were introduced through a vivid comparison before moving into the underlying chemistry.",
+        "misconceptions_noticed": "Abby recalled average ocean salinity as 1.5% rather than 3.5%, and was not previously aware of the stomach's unusually low pH or of thermal expansion as a cause of sea level rise.",
+        "confidence_level": "Growing steadily, increasingly confident explaining ideas in her own words",
+        "successful_teaching_strategies": [
+          "vivid real-world analogies before introducing chemistry",
+          "guided one-variable-at-a-time simulation exploration",
+          "connecting new content to previously learned concepts such as pH"
+        ],
+        "adaptation_to_reach_full_potential": "Abby continues to respond best when a scientific concept is introduced through a memorable comparison before moving into the underlying chemistry, and when simulation exploration is narrowed to one variable at a time once she has had a chance to explore freely.",
+        "extension_task": "Choose one coastal city other than Sydney and research how sea level rise is expected to affect it.",
+        "family_friendly_science_explanation": "The ocean is absorbing extra carbon dioxide from the air, which reacts with seawater to form a weak acid and slowly lowers the ocean's pH, separately from the warming water that is also harming coral reefs.",
+        "resources": [
+          {
+            "title": "NOAA National Ocean Service - What is Ocean Acidification?",
+            "url": "https://oceanservice.noaa.gov/facts/acidification.html",
+            "note": "Useful for revisiting the chemistry behind ocean acidification."
+          },
+          {
+            "title": "NOAA National Ocean Service - What is Coral Bleaching?",
+            "url": "https://oceanservice.noaa.gov/facts/coral_bleach.html",
+            "note": "Useful for connecting the lesson's coral bleaching image to the underlying science."
+          },
+          {
+            "title": "NASA Science - Is Sea Level Rising?",
+            "url": "https://science.nasa.gov/kids/earth/is-sea-level-rising/",
+            "note": "Useful for reinforcing the two separate causes of sea level rise."
+          }
+        ],
+        "dashboard_subject": "Marine Science",
+        "independence_patterns": [],
+        "misconceptions": [],
+        "communication_patterns": [],
+        "student_glows": [],
+        "accuracy_patterns": [],
+        "vocabulary_patterns": [],
+        "confidence_patterns": [],
+        "reasoning_patterns": [],
+        "successful_strategies": [],
+        "skills_focus": [],
+        "participation_patterns": [],
+        "student_grows": [],
+        "additional_notes": "",
+        "current_unit": "",
+        "student_pacing": "",
+        "lesson_engagement": "",
+        "assignments_outstanding": [],
+        "indicators": {}
+      }
+    },
+    {
+      "session_date": "10 August 2026",
+      "session_date_iso": "2026-08-10",
+      "lesson_title": "Ocean Salinity Living Seawater",
+      "summary": "Abby completed her first Canvas quiz, began real Marine Science content through ocean salinity, and explored why seawater is a living system rather than just salt water.",
+      "aim": "To help Abby feel confident using the course systems while beginning her first core Marine Science ideas about ocean salinity, marine environments, and the living complexity of seawater.",
+      "headline_insight": "Abby engaged best when Marine Science ideas were connected to her own experiences of beaches, diving, and curiosity about ocean life.",
+      "current_focus": "Canvas confidence, average ocean salinity, and the living complexity of seawater.",
+      "big_win": "Abby completed her first quiz successfully and remembered the 3.5% ocean salinity figure clearly.",
+      "next_priority": "Keep the salinity anchor point secure and continue building curiosity-led understanding of marine systems.",
+      "engagement_status": "Relaxed, open, and increasingly engaged as the science became more personal and vivid.",
+      "why_this_matters": "This lesson gave Abby both practical online-course confidence and a real first scientific anchor for the Marine Science course.",
+      "progress_since_last_update": "Abby has moved from onboarding into genuine content while still keeping the pace manageable and low-pressure.",
+      "home_support": [
+        "Ask Abby what 3.5% tells us about the average ocean.",
+        "Ask her why a living aquarium needs more than water and oxygen."
+      ],
+      "student_voice": "Abby was especially interested in undiscovered ocean species and drew on her own beach and diving experiences.",
+      "upcoming_focus": [
+        "marine habitats",
+        "ocean chemistry",
+        "curiosity-led Marine Science questions"
+      ],
+      "strengths": [
+        "Responds well to real-world examples",
+        "Calm digital participation",
+        "Natural curiosity about the ocean"
+      ],
+      "areas_for_growth": [
+        "Build confidence with scientific vocabulary",
+        "Keep revisiting ideas between lessons",
+        "Turn curiosity into clearer scientific explanations"
+      ],
+      "next_steps": [
+        "Remember the 3.5% salinity anchor fact",
+        "List examples of what makes seawater biologically complex",
+        "Bring one ocean question to the next lesson"
+      ],
+      "skills_observed": [
+        "platform navigation",
+        "scientific listening",
+        "recall",
+        "questioning",
+        "experience-to-science linking"
+      ],
+      "engagement": "Warm and receptive, with strongest engagement when the lesson linked directly to her own experiences.",
+      "misconceptions_noticed": "No fixed misconception stood out, but Abby is still in the early stage of seeing seawater as a full ecosystem rather than a simple chemical mixture.",
+      "confidence_level": "Growing quickly when the lesson is gentle, personal, and example-rich.",
+      "successful_teaching_strategies": [
+        "low-pressure platform practice",
+        "linking science to personal travel and diving",
+        "using vivid contrast cases like the Dead Sea"
+      ],
+      "adaptation_to_reach_full_potential": "Abby appears to learn best when a lesson begins with a clear practical task, then moves into science through one memorable fact and one vivid real-world example.",
+      "extension_task": "Choose one marine environment of interest and bring one question about it to the next lesson.",
+      "family_friendly_science_explanation": "Abby began Marine Science by learning that the ocean is about 3.5% salt on average and that real seawater supports a wider living ecosystem.",
+      "resources": [
+        {
+          "title": "NOAA Ocean Service - Why is the ocean salty?",
+          "url": "https://oceanservice.noaa.gov/facts/whysalty.html",
+          "note": "Use this to revisit where ocean salt comes from and why salinity matters."
+        },
+        {
+          "title": "National Geographic - Dead Sea",
+          "url": "https://education.nationalgeographic.org/resource/dead-sea/",
+          "note": "Use this to reinforce the extreme salinity example from the lesson."
+        },
+        {
+          "title": "National Geographic Kids - Ocean habitat",
+          "url": "https://kids.nationalgeographic.com/nature/habitats/article/ocean",
+          "note": "Use this as an accessible overview of ocean life and marine habitats."
+        }
+      ],
+      "independence_patterns": [],
+      "misconceptions": [],
+      "communication_patterns": [],
+      "student_glows": [],
+      "accuracy_patterns": [],
+      "vocabulary_patterns": [],
+      "confidence_patterns": [],
+      "reasoning_patterns": [],
+      "successful_strategies": [],
+      "skills_focus": [],
+      "participation_patterns": [],
+      "student_grows": [],
+      "additional_notes": "",
+      "current_unit": "",
+      "student_pacing": "",
+      "lesson_engagement": "",
+      "assignments_outstanding": [],
+      "indicators": {},
+      "dashboard_subject": "Marine Science",
+      "skills": [
+        {
+          "evidence": "Responds well to real-world examples",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "Calm digital participation",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "Natural curiosity about the ocean",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "platform navigation",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "scientific listening",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "recall",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "questioning",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "experience-to-science linking",
+          "source_field": "skills_observed"
+        }
+      ],
+      "growing_next": [
+        {
+          "evidence": "Build confidence with scientific vocabulary",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Keep revisiting ideas between lessons",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Turn curiosity into clearer scientific explanations",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Keep the salinity anchor point secure and continue building curiosity-led understanding of marine systems.",
+          "source_field": "next_priority"
+        }
+      ],
+      "raw_session": {
+        "session_date": "10 August 2026",
+        "session_date_iso": "2026-08-10",
+        "lesson_title": "Ocean Salinity Living Seawater",
+        "summary": "Abby completed her first Canvas quiz, began real Marine Science content through ocean salinity, and explored why seawater is a living system rather than just salt water.",
+        "aim": "To help Abby feel confident using the course systems while beginning her first core Marine Science ideas about ocean salinity, marine environments, and the living complexity of seawater.",
+        "headline_insight": "Abby engaged best when Marine Science ideas were connected to her own experiences of beaches, diving, and curiosity about ocean life.",
+        "current_focus": "Canvas confidence, average ocean salinity, and the living complexity of seawater.",
+        "big_win": "Abby completed her first quiz successfully and remembered the 3.5% ocean salinity figure clearly.",
+        "next_priority": "Keep the salinity anchor point secure and continue building curiosity-led understanding of marine systems.",
+        "engagement_status": "Relaxed, open, and increasingly engaged as the science became more personal and vivid.",
+        "why_this_matters": "This lesson gave Abby both practical online-course confidence and a real first scientific anchor for the Marine Science course.",
+        "progress_since_last_update": "Abby has moved from onboarding into genuine content while still keeping the pace manageable and low-pressure.",
+        "home_support": [
+          "Ask Abby what 3.5% tells us about the average ocean.",
+          "Ask her why a living aquarium needs more than water and oxygen."
+        ],
+        "student_voice": "Abby was especially interested in undiscovered ocean species and drew on her own beach and diving experiences.",
+        "upcoming_focus": [
+          "marine habitats",
+          "ocean chemistry",
+          "curiosity-led Marine Science questions"
+        ],
+        "strengths": [
+          "Responds well to real-world examples",
+          "Calm digital participation",
+          "Natural curiosity about the ocean"
+        ],
+        "areas_for_growth": [
+          "Build confidence with scientific vocabulary",
+          "Keep revisiting ideas between lessons",
+          "Turn curiosity into clearer scientific explanations"
+        ],
+        "next_steps": [
+          "Remember the 3.5% salinity anchor fact",
+          "List examples of what makes seawater biologically complex",
+          "Bring one ocean question to the next lesson"
+        ],
+        "skills_observed": [
+          "platform navigation",
+          "scientific listening",
+          "recall",
+          "questioning",
+          "experience-to-science linking"
+        ],
+        "engagement": "Warm and receptive, with strongest engagement when the lesson linked directly to her own experiences.",
+        "misconceptions_noticed": "No fixed misconception stood out, but Abby is still in the early stage of seeing seawater as a full ecosystem rather than a simple chemical mixture.",
+        "confidence_level": "Growing quickly when the lesson is gentle, personal, and example-rich.",
+        "successful_teaching_strategies": [
+          "low-pressure platform practice",
+          "linking science to personal travel and diving",
+          "using vivid contrast cases like the Dead Sea"
+        ],
+        "adaptation_to_reach_full_potential": "Abby appears to learn best when a lesson begins with a clear practical task, then moves into science through one memorable fact and one vivid real-world example.",
+        "extension_task": "Choose one marine environment of interest and bring one question about it to the next lesson.",
+        "family_friendly_science_explanation": "Abby began Marine Science by learning that the ocean is about 3.5% salt on average and that real seawater supports a wider living ecosystem.",
+        "resources": [
+          {
+            "title": "NOAA Ocean Service - Why is the ocean salty?",
+            "url": "https://oceanservice.noaa.gov/facts/whysalty.html",
+            "note": "Use this to revisit where ocean salt comes from and why salinity matters."
+          },
+          {
+            "title": "National Geographic - Dead Sea",
+            "url": "https://education.nationalgeographic.org/resource/dead-sea/",
+            "note": "Use this to reinforce the extreme salinity example from the lesson."
+          },
+          {
+            "title": "National Geographic Kids - Ocean habitat",
+            "url": "https://kids.nationalgeographic.com/nature/habitats/article/ocean",
+            "note": "Use this as an accessible overview of ocean life and marine habitats."
+          }
+        ],
+        "independence_patterns": [],
+        "misconceptions": [],
+        "communication_patterns": [],
+        "student_glows": [],
+        "accuracy_patterns": [],
+        "vocabulary_patterns": [],
+        "confidence_patterns": [],
+        "reasoning_patterns": [],
+        "successful_strategies": [],
+        "skills_focus": [],
+        "participation_patterns": [],
+        "student_grows": [],
+        "additional_notes": "",
+        "current_unit": "",
+        "student_pacing": "",
+        "lesson_engagement": "",
+        "assignments_outstanding": [],
+        "indicators": {},
+        "dashboard_subject": "Marine Science"
+      }
+    },
+    {
+      "session_date": "3 August 2026",
+      "session_date_iso": "2026-08-03",
+      "lesson_title": "Welcome Orientation Setup",
+      "summary": "Abby used the first lesson to get comfortable with CGA Home, My DaVinci, Canvas, and the practical routines that will support the course.",
+      "aim": "To welcome Abby warmly to CGA, begin building trust, and make sure she leaves the first lesson with a clear understanding of the main school platforms, communication routes, and lesson-scheduling expectations.",
+      "headline_insight": "The strongest outcome of the session was Abby leaving with more clarity about how the online course will work and where to go when something is unclear.",
+      "current_focus": "platform confidence, communication routines, lesson scheduling, and a calm start to Marine Science.",
+      "big_win": "Abby moved from being new to the CGA systems to having a clearer understanding of where lessons, materials, and schedule changes are managed.",
+      "next_priority": "Practise logging back into the main platforms independently before the next lesson.",
+      "engagement_status": "Calm and receptive.",
+      "why_this_matters": "A confident start with systems and routines makes it much easier for Abby to focus on Marine Science content in future lessons.",
+      "progress_since_last_update": "This was Abby's first session, so the main progress was settling into the course structure and understanding the key school platforms.",
+      "home_support": [
+        "Encourage Abby to reopen CGA Home and Canvas once during the week so the access steps begin to feel routine."
+      ],
+      "student_voice": "Abby came across as calm, polite, and open to guidance during the onboarding process.",
+      "upcoming_focus": [
+        "independent platform use",
+        "clear lesson-routine habits",
+        "transition into Marine Science content"
+      ],
+      "strengths": [
+        "comfortable asking practical questions",
+        "calm start to a new course",
+        "good receptiveness to structure and routines"
+      ],
+      "areas_for_growth": [
+        "build more independence with the platforms",
+        "spot schedule clashes early",
+        "keep communication proactive when something is unclear"
+      ],
+      "next_steps": [
+        "reopen CGA Home and Canvas before the next lesson",
+        "keep checking invitations early around travel and competitions",
+        "bring any login or scheduling questions forward promptly"
+      ],
+      "skills_observed": [
+        "platform navigation",
+        "calendar awareness",
+        "communication about scheduling",
+        "online learning readiness"
+      ],
+      "engagement": "Abby responded well to a calm, practical first lesson that focused on clarity and routine rather than academic overload.",
+      "misconceptions_noticed": "No major Marine Science misconceptions were relevant in this lesson because the session focused on onboarding. The main practical confusion was around platform access and how the different CGA systems connect to one another, which is completely normal for a first lesson.",
+      "confidence_level": "Growing",
+      "successful_teaching_strategies": [
+        "begin with practical setup before increasing academic pace",
+        "connect scheduling plans to Abby's real commitments",
+        "keep communication expectations simple and clear"
+      ],
+      "adaptation_to_reach_full_potential": "Abby is likely to benefit from a calm, structured start in which practical systems are made simple before the academic pace increases. Clear routines, advance notice around travel, and direct communication should help her settle in and get the most out of the course.",
+      "extension_task": "Abby can log back into CGA Home and Canvas once during the week, simply to rehearse the access steps and make the platforms feel more familiar before the next lesson.",
+      "family_friendly_science_explanation": "This first lesson was mainly about setting Abby up well for success in the course. Before students can learn confidently online, it helps to make sure they know how to enter lessons, where to find materials, and how to manage communication and scheduling.",
+      "resources": [
+        {
+          "title": "CGA Home",
+          "url": "https://home.cga.school/",
+          "note": "Useful for checking lesson invitations and the school schedule."
+        },
+        {
+          "title": "Canvas",
+          "url": "https://lms.cga.school/",
+          "note": "Useful for opening the Marine Science course and finding lesson materials."
+        },
+        {
+          "title": "My DaVinci",
+          "url": "https://home.cga.school/da_vinci/my_students",
+          "note": "Useful for reviewing lesson details and timetable changes."
+        }
+      ],
+      "dashboard_subject": "US Marine Science",
+      "independence_patterns": [],
+      "misconceptions": [],
+      "communication_patterns": [],
+      "student_glows": [],
+      "accuracy_patterns": [],
+      "vocabulary_patterns": [],
+      "confidence_patterns": [],
+      "reasoning_patterns": [],
+      "successful_strategies": [],
+      "skills_focus": [],
+      "participation_patterns": [],
+      "student_grows": [],
+      "additional_notes": "",
+      "current_unit": "",
+      "student_pacing": "",
+      "lesson_engagement": "",
+      "assignments_outstanding": [],
+      "indicators": {},
+      "skills": [
+        {
+          "evidence": "comfortable asking practical questions",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "calm start to a new course",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "good receptiveness to structure and routines",
+          "source_field": "strengths"
+        },
+        {
+          "evidence": "platform navigation",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "calendar awareness",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "communication about scheduling",
+          "source_field": "skills_observed"
+        },
+        {
+          "evidence": "online learning readiness",
+          "source_field": "skills_observed"
+        }
+      ],
+      "growing_next": [
+        {
+          "evidence": "build more independence with the platforms",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "spot schedule clashes early",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "keep communication proactive when something is unclear",
+          "source_field": "areas_for_growth"
+        },
+        {
+          "evidence": "Practise logging back into the main platforms independently before the next lesson.",
+          "source_field": "next_priority"
+        }
+      ],
+      "raw_session": {
+        "session_date": "3 August 2026",
+        "session_date_iso": "2026-08-03",
+        "lesson_title": "Welcome Orientation Setup",
+        "summary": "Abby used the first lesson to get comfortable with CGA Home, My DaVinci, Canvas, and the practical routines that will support the course.",
+        "aim": "To welcome Abby warmly to CGA, begin building trust, and make sure she leaves the first lesson with a clear understanding of the main school platforms, communication routes, and lesson-scheduling expectations.",
+        "headline_insight": "The strongest outcome of the session was Abby leaving with more clarity about how the online course will work and where to go when something is unclear.",
+        "current_focus": "platform confidence, communication routines, lesson scheduling, and a calm start to Marine Science.",
+        "big_win": "Abby moved from being new to the CGA systems to having a clearer understanding of where lessons, materials, and schedule changes are managed.",
+        "next_priority": "Practise logging back into the main platforms independently before the next lesson.",
+        "engagement_status": "Calm and receptive.",
+        "why_this_matters": "A confident start with systems and routines makes it much easier for Abby to focus on Marine Science content in future lessons.",
+        "progress_since_last_update": "This was Abby's first session, so the main progress was settling into the course structure and understanding the key school platforms.",
+        "home_support": [
+          "Encourage Abby to reopen CGA Home and Canvas once during the week so the access steps begin to feel routine."
+        ],
+        "student_voice": "Abby came across as calm, polite, and open to guidance during the onboarding process.",
+        "upcoming_focus": [
+          "independent platform use",
+          "clear lesson-routine habits",
+          "transition into Marine Science content"
+        ],
+        "strengths": [
+          "comfortable asking practical questions",
+          "calm start to a new course",
+          "good receptiveness to structure and routines"
+        ],
+        "areas_for_growth": [
+          "build more independence with the platforms",
+          "spot schedule clashes early",
+          "keep communication proactive when something is unclear"
+        ],
+        "next_steps": [
+          "reopen CGA Home and Canvas before the next lesson",
+          "keep checking invitations early around travel and competitions",
+          "bring any login or scheduling questions forward promptly"
+        ],
+        "skills_observed": [
+          "platform navigation",
+          "calendar awareness",
+          "communication about scheduling",
+          "online learning readiness"
+        ],
+        "engagement": "Abby responded well to a calm, practical first lesson that focused on clarity and routine rather than academic overload.",
+        "misconceptions_noticed": "No major Marine Science misconceptions were relevant in this lesson because the session focused on onboarding. The main practical confusion was around platform access and how the different CGA systems connect to one another, which is completely normal for a first lesson.",
+        "confidence_level": "Growing",
+        "successful_teaching_strategies": [
+          "begin with practical setup before increasing academic pace",
+          "connect scheduling plans to Abby's real commitments",
+          "keep communication expectations simple and clear"
+        ],
+        "adaptation_to_reach_full_potential": "Abby is likely to benefit from a calm, structured start in which practical systems are made simple before the academic pace increases. Clear routines, advance notice around travel, and direct communication should help her settle in and get the most out of the course.",
+        "extension_task": "Abby can log back into CGA Home and Canvas once during the week, simply to rehearse the access steps and make the platforms feel more familiar before the next lesson.",
+        "family_friendly_science_explanation": "This first lesson was mainly about setting Abby up well for success in the course. Before students can learn confidently online, it helps to make sure they know how to enter lessons, where to find materials, and how to manage communication and scheduling.",
+        "resources": [
+          {
+            "title": "CGA Home",
+            "url": "https://home.cga.school/",
+            "note": "Useful for checking lesson invitations and the school schedule."
+          },
+          {
+            "title": "Canvas",
+            "url": "https://lms.cga.school/",
+            "note": "Useful for opening the Marine Science course and finding lesson materials."
+          },
+          {
+            "title": "My DaVinci",
+            "url": "https://home.cga.school/da_vinci/my_students",
+            "note": "Useful for reviewing lesson details and timetable changes."
+          }
+        ],
+        "dashboard_subject": "US Marine Science",
+        "independence_patterns": [],
+        "misconceptions": [],
+        "communication_patterns": [],
+        "student_glows": [],
+        "accuracy_patterns": [],
+        "vocabulary_patterns": [],
+        "confidence_patterns": [],
+        "reasoning_patterns": [],
+        "successful_strategies": [],
+        "skills_focus": [],
+        "participation_patterns": [],
+        "student_grows": [],
+        "additional_notes": "",
+        "current_unit": "",
+        "student_pacing": "",
+        "lesson_engagement": "",
+        "assignments_outstanding": [],
+        "indicators": {}
+      }
+    }
+  ]
+}</script>
+<script>
+const DISCLAIMER = "This is a voluntary teaching resource created by Mr. Guevara to add as much value as possible for families and students. It is not a requirement of Crimson Global Academy, and other teachers may not provide anything similar — this is not part of what CGA officially offers. Please refer to the Learning Lab as the official Crimson Global Academy resource, where assignments, grades, deadlines, and formal progress reports are provided. The information here is supplementary and is not part of any official session report or progress report sent by the school.";
+
+const LINKEDIN_URL = "https://www.linkedin.com/in/diego-urrutia-guevara-150bb641/";
+
+const data = JSON.parse(document.getElementById('dashboard-v2-data').textContent);
+const name = data.student_first_name || "the student";
+
+function esc(s){
+  return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function footerHtml(){
+  return `<footer class="disclaimer">${esc(DISCLAIMER)}</footer>`;
+}
+
+const TARGET_ICON = `<svg class="target-icon" viewBox="0 0 64 64" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="32" cy="32" r="27" fill="none" stroke="currentColor" stroke-width="4" opacity=".35"/>
+  <circle cx="32" cy="32" r="15" fill="none" stroke="currentColor" stroke-width="4" opacity=".55"/>
+  <circle cx="32" cy="32" r="4" fill="currentColor"/>
+</svg>`;
+
+function eyebrow(label){
+  return `<div class="eyebrow-label">${TARGET_ICON}${esc(label)}</div>`;
+}
+
+/* ---------------- OVERVIEW TAB ---------------- */
+function renderOverview(){
+  const s = data.stats || {};
+  const latest = data.sessions[0] || {};
+  const quotes = data.voice_quotes || [];
+
+  let html = `
+    ${eyebrow("Overview")}
+    <h2 class="panel-title">Overview</h2>
+    <p class="panel-sub">A quick snapshot of ${esc(name)}'s learning journey so far.</p>
+    <div class="stat-row">
+      <div class="stat"><div class="num">${s.sessions_logged ?? 0}</div><div class="label">Sessions logged</div></div>
+      <div class="stat"><div class="num">${s.distinct_skills_tried ?? 0}</div><div class="label">Distinct skills tried</div></div>
+      <div class="stat"><div class="num">${s.milestones_hit ?? 0}</div><div class="label">Milestones hit</div></div>
+    </div>
+    <div class="focus-row">
+      <div class="focus-card win"><div class="eyebrow">Big win</div>${esc(latest.big_win || "")}</div>
+      <div class="focus-card tonight"><div class="eyebrow">Try tonight</div>${esc((latest.home_support && latest.home_support[0]) || "")}</div>
+      <div class="focus-card edge"><div class="eyebrow">Growing edge</div>${esc((latest.growing_next && latest.growing_next[0] && latest.growing_next[0].evidence) || "")}</div>
+    </div>
+    <div class="card">
+      <h3>Since we last looked</h3>
+      <p>${esc(latest.raw_session && latest.raw_session.progress_since_last_update && Array.isArray(latest.raw_session.progress_since_last_update) ? latest.raw_session.progress_since_last_update[0] : (latest.raw_session ? latest.raw_session.progress_since_last_update : "") || "")}</p>
+    </div>
+    <div class="card">
+      <h3>What this lesson was about</h3>
+      <p>${esc(latest.family_friendly_science_explanation || latest.summary || "")}</p>
+    </div>
+    <div class="card">
+      <h3>In ${esc(name)}'s own words</h3>
+      ${quotes.map(q => `
+        <div class="quote-card">
+          <blockquote>&ldquo;${esc(q.quote)}&rdquo;</blockquote>
+          <div class="interp">From "${esc(q.lesson_title)}" (${esc(q.session_date)}) — this shows ${esc(name)} thinking in his own terms, not just repeating a definition.</div>
+        </div>`).join("")}
+    </div>
+  `;
+  document.getElementById('tab-overview').innerHTML = html + footerHtml();
+}
+
+/* ---------------- PROGRESS TAB (chart) ---------------- */
+const STAGE_Y = {Emerging: 3, Developing: 2, Growing: 1, Secure: 0};
+// Line colours pulled from the Discovery Lab "earth" theme's accent/signal
+// family (greens and rust-orange), so threads read as one palette with the
+// rest of the dashboard rather than an unrelated colour set.
+const STAGE_COLORS = {
+  "Hardware & software vocabulary": "#40634C",
+  "Independent research & problem solving": "#517B5E",
+  "Programming & coding": "#B5551F",
+  "Digital safety & responsible use": "#A66B00",
+};
+const LINE_COL = "#1D211C24";
+const INK2 = "#4A5148";
+const INK3 = "#757C72";
+
+function shortDate(iso){
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString("en-GB", {day:"numeric", month:"short"});
+}
+
+function buildChartSVG(threads){
+  const W = 780, H = 300, padL = 140, padR = 20, padT = 20, padB = 46;
+  const allDates = [...new Set(Object.values(threads).flat().map(p => p.session_date_iso))].sort();
+  const x = d => {
+    const idx = allDates.indexOf(d);
+    const n = Math.max(allDates.length - 1, 1);
+    return padL + (idx / n) * (W - padL - padR);
+  };
+  const rowH = (H - padT - padB) / 4;
+  const y = stage => padT + STAGE_Y[stage] * rowH + rowH / 2;
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="var(--font-ui),sans-serif">`;
+
+  // Stage rows: qualitative stage NAMES are the only y-axis labels, never numbers.
+  ["Emerging","Developing","Growing","Secure"].forEach((stage, i) => {
+    const yy = padT + i * rowH + rowH / 2;
+    svg += `<line x1="${padL}" y1="${yy}" x2="${W - padR}" y2="${yy}" stroke="${LINE_COL}" stroke-width="1" stroke-dasharray="3 5"/>`;
+    svg += `<text x="8" y="${yy + 4}" font-size="12" fill="${INK2}" font-weight="700">${stage}</text>`;
+  });
+
+  // Dated x-axis: a step line under the plot with a dashed tick per session date.
+  const axisY = padT + 4 * rowH;
+  svg += `<line x1="${padL}" y1="${axisY}" x2="${W - padR}" y2="${axisY}" stroke="${LINE_COL}" stroke-width="1"/>`;
+  allDates.forEach(d => {
+    const px = x(d);
+    svg += `<line x1="${px}" y1="${axisY}" x2="${px}" y2="${axisY + 6}" stroke="${LINE_COL}" stroke-width="1" stroke-dasharray="2 3"/>`;
+    svg += `<text x="${px}" y="${axisY + 22}" font-size="10" fill="${INK3}" text-anchor="middle" transform="rotate(0 ${px} ${axisY+22})" font-family="var(--font-data),monospace">${shortDate(d)}</text>`;
+  });
+
+  let pointId = 0;
+  const points = [];
+  Object.entries(threads).forEach(([threadName, pts]) => {
+    const color = STAGE_COLORS[threadName] || "#40634C";
+    const sorted = [...pts].sort((a,b) => a.session_date_iso.localeCompare(b.session_date_iso));
+    // Step line (not a smooth diagonal): holds the current stage until the
+    // next dated observation, which better reflects a qualitative plateau.
+    let path = "";
+    sorted.forEach((p, i) => {
+      const px = x(p.session_date_iso), py = y(p.stage);
+      if (i === 0) { path += `M${px},${py} `; }
+      else {
+        const prevPx = x(sorted[i-1].session_date_iso);
+        path += `L${px},${y(sorted[i-1].stage)} L${px},${py} `;
+      }
+    });
+    svg += `<path d="${path.trim()}" fill="none" stroke="${color}" stroke-width="2.5" opacity="0.85"/>`;
+    sorted.forEach(p => {
+      const px = x(p.session_date_iso), py = y(p.stage);
+      const id = "pt" + (pointId++);
+      points.push({id, threadName, ...p});
+      svg += `<circle cx="${px}" cy="${py}" r="5" fill="${color}" stroke="${'#FBF9F3'}" stroke-width="1.5" style="cursor:pointer" onclick="showEvidence('${id}')"/>`;
+    });
+  });
+  svg += `</svg>`;
+  window.__chartPoints = points;
+  return svg;
+}
+
+function showEvidence(id){
+  const p = (window.__chartPoints || []).find(pt => pt.id === id);
+  const el = document.getElementById('evidence-pop');
+  if (!el || !p) return;
+  el.innerHTML = `<strong>${esc(p.threadName)} — ${esc(p.stage)}</strong> (${esc(p.session_date)}, "${esc(p.lesson_title)}")<br>${esc(p.evidence)}`;
+  el.classList.add('show');
+  el.scrollIntoView({behavior:"smooth", block:"nearest"});
+}
+
+function renderProgress(){
+  const threads = data.skill_threads || {};
+  const lp = data.learning_profile || {};
+  const milestones = data.milestones || [];
+
+  let legend = Object.keys(threads).map(k =>
+    `<span><span class="legend-dot" style="background:${STAGE_COLORS[k] || '#2F5871'}"></span>${esc(k)}</span>`
+  ).join(" &nbsp; ");
+
+  let html = `
+    ${eyebrow("Progress")}
+    <h2 class="panel-title">Progress</h2>
+    <p class="panel-sub">These are Mr. Guevara's qualitative professional observations from lessons, not a score or grade. Click any point on the chart for the evidence it is drawn from.</p>
+    <div class="card chart-card">
+      <h3>Skills over time (qualitative stages)</h3>
+      ${buildChartSVG(threads)}
+      <div class="chart-legend">${legend}</div>
+      <div id="evidence-pop" class="evidence-pop"></div>
+    </div>
+    <div class="card">
+      <h3>Moments that mattered</h3>
+      ${milestones.map(m => `
+        <div class="milestone">
+          <div class="dot"></div>
+          <div>
+            <div class="date">${esc(m.session_date)}</div>
+            <strong>${esc(m.title)}</strong>
+            <div>${esc(m.detail)}</div>
+          </div>
+        </div>`).join("")}
+    </div>
+    <div class="card">
+      <h3>Early learning profile</h3>
+      <div class="basis-note">Based on ${lp.based_on_sessions ?? 0} sessions so far — this will keep evolving as more sessions are logged.</div>
+      <div class="profile-grid" style="margin-top:10px;">
+        <div class="item"><div class="k">Engages best when</div>${esc(lp.engages_best_when || "")}</div>
+        <div class="item"><div class="k">Responds well to</div>${esc(lp.responds_well_to || "")}</div>
+        <div class="item"><div class="k">Often curious about</div>${esc(lp.often_curious_about || "")}</div>
+        <div class="item"><div class="k">Currently trying</div>${esc(lp.currently_trying || "")}</div>
+      </div>
+    </div>
+  `;
+  document.getElementById('tab-progress').innerHTML = html + footerHtml();
+}
+
+/* ---------------- HELP AT HOME TAB ---------------- */
+function renderHelpAtHome(){
+  const latest = data.sessions[0] || {};
+  const askQuestions = (latest.raw_session && latest.raw_session.next_steps) || [];
+  let html = `
+    ${eyebrow("Help at Home")}
+    <h2 class="panel-title">Help at Home</h2>
+    <p class="panel-sub">This is optional and conversational, not homework — a few ideas if a moment naturally comes up at home.</p>
+    <div class="card">
+      <h3>Ask ${esc(name)}</h3>
+      <ul class="plain">
+        ${askQuestions.slice(0,3).map(q => `<li>${esc(q)}</li>`).join("")}
+      </ul>
+    </div>
+    <div class="card">
+      <h3>This week's home-support idea</h3>
+      <ul class="plain">${(latest.home_support || []).map(h => `<li>${esc(h)}</li>`).join("")}</ul>
+    </div>
+    <div class="card">
+      <h3>Resources from the latest session</h3>
+      ${(latest.resources || []).map(r => `
+        <div class="resource-link">
+          <a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a>
+          <div class="note">${esc(r.note)}</div>
+        </div>`).join("")}
+    </div>
+  `;
+  document.getElementById('tab-helpathome').innerHTML = html + footerHtml();
+}
+
+/* ---------------- SESSIONS TAB ---------------- */
+function renderSessions(){
+  const sessions = data.sessions || [];
+  let html = `
+    ${eyebrow("Sessions")}
+    <h2 class="panel-title">Sessions</h2>
+    <p class="panel-sub">Full chronological session history, newest first. Click any session to expand it.</p>
+  `;
+  sessions.forEach(s => {
+    html += `
+      <details class="session">
+        <summary>${esc(s.lesson_title)}<span class="sdate">${esc(s.session_date)}</span></summary>
+        <div class="session-body">
+          <h4>Summary</h4><p>${esc(s.summary)}</p>
+          <h4>Strengths / glows</h4>
+          <ul class="plain">${(s.skills || []).map(sk => `<li>${esc(sk.evidence)}</li>`).join("")}</ul>
+          <h4>Growing next</h4>
+          <ul class="plain">${(s.growing_next || []).map(g => `<li>${esc(g.evidence)}</li>`).join("")}</ul>
+          <h4>Resources</h4>
+          ${(s.resources || []).map(r => `<div class="resource-link"><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a><div class="note">${esc(r.note)}</div></div>`).join("")}
+        </div>
+      </details>
+    `;
+  });
+  document.getElementById('tab-sessions').innerHTML = html + footerHtml();
+}
+
+/* ---------------- ABOUT TAB ---------------- */
+function renderAbout(){
+  const chips = ["Primary &amp; Secondary","IGCSE &middot; A-Level &middot; US Diploma","UK &middot; Spain &middot; New Zealand","Students on 4 continents","Teacher training"];
+  const html = `
+    ${eyebrow("About")}
+    <h2 class="panel-title">About Mr. Guevara</h2>
+    <p class="panel-sub">The teacher behind this dashboard.</p>
+    <div class="card about-hero">
+      ${eyebrow("The teacher behind this dashboard")}
+      <div class="about-photo-wrap">
+        <img class="about-photo" src="https://educadug.github.io/discovery-lab/about/diego.jpg?v=2" alt="Diego Urrutia Guevara" loading="lazy">
+      </div>
+      <h3 class="about-heading">Diego Urrutia Guevara</h3>
+      <p class="about-subheading">Studied in Norway, Spain and New Zealand. Taught in the UK, Spain and New Zealand. Now teaching students across four continents.</p>
+      <div class="about-chip-row">${chips.map(c => `<span class="about-chip">${c}</span>`).join("")}</div>
+      <a class="btn-linkedin" href="${esc(LINKEDIN_URL)}" target="_blank" rel="noopener noreferrer">Connect on LinkedIn</a>
+    </div>
+    <div class="card">
+      <h3>About Diego</h3>
+      <p>Diego's classroom has never had one nationality in it. He studied in Norway, Spain and New Zealand, taught in both private and state schools in the United Kingdom and Spain, and now teaches from New Zealand to students in Europe, the United States, Japan, China, Southeast Asia and Australia.</p>
+      <p>That range is not a travel list — it is the substance of how he teaches. Students arrive from different school systems, different languages and very different ideas of what a good answer looks like. Teaching all of them well means building lessons around thinking rather than around the habits of any single curriculum.</p>
+      <p>Before and alongside education, Diego worked in international consultancy and biodiversity. He believes students learn best when knowledge is connected to real problems, investigation, decision-making and the world beyond the classroom.</p>
+      <p>Running through all of it is a particular interest in the thoughtful use of technology and AI in education. Discovery Lab is where that becomes something you can click: simulations and investigations where students experiment, decide, test ideas and learn by doing.</p>
+    </div>
+    <div class="card about-closing">
+      <h3>Full background and experience</h3>
+      <p>Qualifications, teaching history and professional work are all on LinkedIn. Connect there, or get in touch.</p>
+      <a class="btn-linkedin" href="${esc(LINKEDIN_URL)}" target="_blank" rel="noopener noreferrer">View LinkedIn profile</a>
+    </div>
+  `;
+  document.getElementById('tab-about').innerHTML = html + footerHtml();
+}
+
+renderOverview();
+renderProgress();
+renderHelpAtHome();
+renderSessions();
+renderAbout();
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
