@@ -162,41 +162,11 @@
   "professional_observation_note": "The learning notes in this dashboard are Mr. Guevara's professional observations based on lessons. They are not fixed labels, diagnoses, grades, or formal assessment results.",
   "stats": {
     "sessions_logged": 4,
-    "distinct_skills_tried": 30,
+    "distinct_skills_tried": 2,
     "milestones_hit": 3
   },
   "skill_threads": {
-    "US Marine Science Content Knowledge": [
-      {
-        "session_date_iso": "2026-08-03",
-        "session_date": "3 August 2026",
-        "lesson_title": "Welcome Orientation Setup",
-        "stage": "Developing",
-        "evidence": "Abby moved from being new to the CGA systems to having a clearer understanding of where lessons, materials, and schedule changes are managed."
-      },
-      {
-        "session_date_iso": "2026-08-10",
-        "session_date": "10 August 2026",
-        "lesson_title": "Ocean Salinity Living Seawater",
-        "stage": "Developing",
-        "evidence": "Abby completed her first quiz successfully and remembered the 3.5% ocean salinity figure clearly."
-      },
-      {
-        "session_date_iso": "2026-09-07",
-        "session_date": "07 September 2026",
-        "lesson_title": "Climate Change Ocean Acidification",
-        "stage": "Growing",
-        "evidence": "Abby identified two of the three causes of coral bleaching independently before I introduced ocean acidification as the third."
-      },
-      {
-        "session_date_iso": "2026-09-10",
-        "session_date": "10 September 2026",
-        "lesson_title": "Ocean Pollution Renewable Energy",
-        "stage": "Growing",
-        "evidence": "Abby worked out independently that road runoff from an entire city is a non-point source pollution example, once redirected to think about cities rather than farms."
-      }
-    ],
-    "US Marine Science Independent Reasoning": [
+    "Initiative and self-direction": [
       {
         "session_date_iso": "2026-08-03",
         "session_date": "3 August 2026",
@@ -216,14 +186,23 @@
         "session_date": "07 September 2026",
         "lesson_title": "Climate Change Ocean Acidification",
         "stage": "Growing",
-        "evidence": "Abby moved from needing guidance to isolate simulation variables to independently testing one variable at a time and predicting outcomes correctly, within a single lesson."
+        "evidence": "Abby identified two of the three causes of coral bleaching independently before I introduced ocean acidification as the third."
       },
       {
         "session_date_iso": "2026-09-10",
         "session_date": "10 September 2026",
         "lesson_title": "Ocean Pollution Renewable Energy",
         "stage": "Growing",
-        "evidence": "Abby can reason her way to a genuinely new example once redirected away from an on-screen anchor, rather than only recognising examples she is shown."
+        "evidence": "Abby worked out independently that road runoff from an entire city is a non-point source pollution example, once redirected to think about cities rather than farms."
+      }
+    ],
+    "Communication": [
+      {
+        "session_date_iso": "2026-08-10",
+        "session_date": "10 August 2026",
+        "lesson_title": "Ocean Salinity Living Seawater",
+        "stage": "Developing",
+        "evidence": "Abby completed her first quiz successfully and remembered the 3.5% ocean salinity figure clearly."
       }
     ]
   },
@@ -1207,8 +1186,7 @@
       }
     }
   ]
-}
-</script>
+}</script>
 <script>
 const DISCLAIMER = "This is a voluntary teaching resource created by Mr. Guevara to add as much value as possible for families and students. It is not a requirement of Crimson Global Academy, and other teachers may not provide anything similar — this is not part of what CGA officially offers. Please refer to the Learning Lab as the official Crimson Global Academy resource, where assignments, grades, deadlines, and formal progress reports are provided. The information here is supplementary and is not part of any official session report or progress report sent by the school.";
 
@@ -1257,10 +1235,18 @@ function joinProse(arr){
 
 /* Renders any field that might be a plain string, a real array, or the
    Python-repr-list-as-string bug as clean prose text (HTML-escaped). */
+/* Capitalizes the first letter of a joined/flowing sentence without
+   touching the rest of the string (so mid-sentence proper nouns etc. are
+   left alone). Safe to call on an already-capitalized or empty string. */
+function capitalizeFirst(s){
+  if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 function proseField(v){
   const asArray = toArrayOfStrings(v);
-  if (asArray !== null) return esc(joinProse(asArray));
-  return esc(v || "");
+  if (asArray !== null) return capitalizeFirst(esc(joinProse(asArray)));
+  return capitalizeFirst(esc(v || ""));
 }
 
 function footerHtml(){
@@ -1457,8 +1443,7 @@ function renderProgress(){
         </div>`).join("")}
     </div>
     <div class="card">
-      <h3>Early learning profile</h3>
-      <div class="basis-note">Based on ${lp.based_on_sessions ?? 0} sessions so far — this will keep evolving as more sessions are logged.</div>
+      <h3>Learning profile</h3>
       <div class="profile-grid" style="margin-top:10px;">
         ${[
           ["Engages best when", lp.engages_best_when],
